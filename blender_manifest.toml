@@ -5,16 +5,16 @@
 schema_version = "1.0.0"
 
 id = "sidebar_tab_search"
-version = "1.0.0"
+version = "2.0.0"
 name = "Sidebar Tab Search"
-tagline = "Quick search and switch between Sidebar (N-Panel) tabs"
+tagline = "Deep text search for Sidebar (N-Panel) tabs, panels, properties, and buttons"
 maintainer = "McKaa (Powered by Antigravity)"
 
 # Supported types: "add-on", "theme"
 type = "add-on"
 
 # Minimum Blender version - use at least 4.2.0
-blender_version_min = "5.0.0"
+blender_version_min = "4.2.0"
 
 # License conforming to https://spdx.org/licenses/
 # https://docs.blender.org/manual/en/dev/advanced/extensions/licenses.html
@@ -28,7 +28,7 @@ copyright = [
 ]
 
 # Optional: link to documentation, support, source files, etc
-website = "https://github.com/McKaa/sidebar-tab-search-blender-addon"
+website = "https://github.com/Code-Garvi/sidebar-tab-search-blender-addon"
 
 # Optional: tag list defined by Blender and server
 # https://docs.blender.org/manual/en/dev/advanced/extensions/tags.html
