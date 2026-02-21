@@ -18,7 +18,7 @@ bl_info = {
     "name": "Sidebar Tab Search v2",
     "author": "McKaa (Powered by Antigravity)",
     "version": (2, 0),
-    "blender": (5, 0, 0),
+    "blender": (4, 2, 0),
     "location": "View3D > Header",
     "description": "Deep text search for Sidebar (N-Panel) tabs, panels, properties, and buttons.",
     "warning": "",
