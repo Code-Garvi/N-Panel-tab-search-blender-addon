@@ -15,20 +15,100 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 bl_info = {
-    "name": "Sidebar Tab Search",
+    "name": "Sidebar Tab Search v2",
     "author": "McKaa (Powered by Antigravity)",
-    "version": (1, 0),
+    "version": (2, 0),
     "blender": (5, 0, 0),
     "location": "View3D > Header",
-    "description": "Quick search and switch between Sidebar (N-Panel) tabs.",
+    "description": "Deep text search for Sidebar (N-Panel) tabs, panels, properties, and buttons.",
     "warning": "",
     "doc_url": "",
-    "tracker_url": "https://github.com/McKaa/sidebar-tab-search-blender-addon",
+    "tracker_url": "https://github.com/Code-Garvi/sidebar-tab-search-blender-addon",
     "support": "COMMUNITY",
     "category": "Interface",
 }
 
 import bpy
+import time
+
+# --- Deep Search Infrastructure ---
+
+_SEARCH_CACHE = {"hash": None, "entries": []}
+_SEARCH_CACHE_LAST_UPDATE = 0.0
+
+class MockLayout:
+    """Mock layout to capture text from panel draw methods without drawing."""
+    def __init__(self):
+        self.found_strings = set()
+        self.use_property_split = False
+        self.use_property_decorate = False
+        self.active = True
+        self.enabled = True
+        self.alignment = 'EXPAND'
+        self.scale_x = 1.0
+        self.scale_y = 1.0
+
+    def row(self, **kwargs): return self
+    def column(self, **kwargs): return self
+    def column_flow(self, **kwargs): return self
+    def box(self): return self
+    def split(self, **kwargs): return self
+    def grid_flow(self, **kwargs): return self
+    
+    def prop(self, data, property, text=None, **kwargs):
+        if text:
+            self.found_strings.add(str(text))
+        elif hasattr(data, "bl_rna"):
+            try:
+                prop_def = data.bl_rna.properties.get(str(property))
+                if prop_def:
+                    self.found_strings.add(str(prop_def.name))
+            except: pass
+        return self
+
+    def prop_search(self, data, property, search_data, search_property, text="", **kwargs):
+        if text:
+            self.found_strings.add(str(text))
+        elif hasattr(data, "bl_rna"):
+            try:
+                prop_def = data.bl_rna.properties.get(str(property))
+                if prop_def:
+                    self.found_strings.add(str(prop_def.name))
+            except: pass
+        return self
+
+    def operator(self, operator, text=None, **kwargs):
+        if text:
+            self.found_strings.add(str(text))
+        elif operator:
+            try:
+                name = str(operator).split(".")[-1].replace("_", " ").title()
+                self.found_strings.add(name)
+            except: pass
+        return self
+
+    def label(self, text="", **kwargs):
+        if text: self.found_strings.add(str(text))
+        return self
+    
+    def menu(self, menu, text="", **kwargs):
+        if text: self.found_strings.add(str(text))
+        return self
+        
+    def template_ID(self, data, property, new="", open="", unlink="", text="", **kwargs):
+        if text: self.found_strings.add(str(text))
+        return self
+
+    def __getattr__(self, attr):
+        return lambda *args, **kwargs: self
+
+class MockPanel:
+    def __init__(self, layout, panel_class):
+        self.layout = layout
+        self._panel_class = panel_class
+
+    def __getattr__(self, attr):
+        return getattr(self._panel_class, attr)
 
 # Property group storing the search query
 class SEARCHTABS_PG_properties(bpy.types.PropertyGroup):
@@ -144,6 +224,7 @@ class SEARCHTABS_PT_popover(bpy.types.Panel):
     bl_ui_units_x = 14 # Slightly wider window for long names
 
     def draw(self, context):
+        global _SEARCH_CACHE
         layout = self.layout
         props = context.scene.searchtabs_props
 
@@ -154,54 +235,83 @@ class SEARCHTABS_PT_popover(bpy.types.Panel):
         query = props.search_query.lower()
 
         # Collecting data: Category -> List of Panels (Labels)
-        # Structure: entries = [ {'search_text': "Auto Mirror", 'display': "Auto Mirror (Edit)", 'cat': "Edit"}, ... ]
         
-        entries = []
-        seen_categories = set()
-        
-        # 1. First iterate to collect unique panels with labels (only those available in current context)
-        for panel in bpy.types.Panel.__subclasses__():
-            if (hasattr(panel, 'bl_space_type') and panel.bl_space_type == 'VIEW_3D' and
-                hasattr(panel, 'bl_region_type') and panel.bl_region_type == 'UI' and
-                hasattr(panel, 'bl_category')):
-                
-                # Check if panel is available in current context
-                if hasattr(panel, 'poll'):
-                    try:
-                        if not panel.poll(context):
-                            continue  # Skip panels not available in current context
-                    except Exception:
-                        # If poll fails, skip this panel
+        # Check cache validity (simple hash based on mode and active object)
+        current_hash = hash(context.mode)
+        if context.active_object:
+            current_hash = hash((context.mode, context.active_object.name))
+            
+        if _SEARCH_CACHE["hash"] != current_hash:
+            # Regenerate Index
+            new_entries = []
+            seen_categories = set()
+            
+            for panel in bpy.types.Panel.__subclasses__():
+                if (hasattr(panel, 'bl_space_type') and panel.bl_space_type == 'VIEW_3D' and
+                    hasattr(panel, 'bl_region_type') and panel.bl_region_type == 'UI' and
+                    hasattr(panel, 'bl_category')):
+                    
+                    # Check poll
+                    if hasattr(panel, 'poll'):
+                        try:
+                            if not panel.poll(context): continue
+                        except: continue
+                    
+                    if hasattr(panel, 'bl_options') and 'HIDE_HEADER' in panel.bl_options:
                         continue
-                
-                # Check options for hidden headers (often used for technical panels)
-                if hasattr(panel, 'bl_options'):
-                   if 'HIDE_HEADER' in panel.bl_options:
-                       continue
 
-                cat = panel.bl_category
-                if cat == " Search": continue
+                    cat = panel.bl_category
+                    if cat == " Search": continue
 
-                label = getattr(panel, 'bl_label', "")
-                
-                # Add the category itself as a base result (only once)
-                if cat not in seen_categories:
-                    entries.append({
-                        'search_text': cat.lower(),
-                        'display': cat,
-                        'cat': cat,
-                        'is_main': True
-                    })
-                    seen_categories.add(cat)
-                
-                # Add panel (subcategory) if it has a label different from the category
-                if label and label != cat:
-                    entries.append({
-                        'search_text': f"{label} {cat}".lower(), # Allows searching by both
-                        'display': f"{label} ({cat})",
-                        'cat': cat,
-                        'is_main': False
-                    })
+                    label = getattr(panel, 'bl_label', "")
+                    
+                    # 1. Add Category
+                    if cat not in seen_categories:
+                        new_entries.append({'search_text': cat.lower(), 'display': cat, 'cat': cat, 'is_main': True})
+                        seen_categories.add(cat)
+                    
+                    # 2. Add Panel Header
+                    if label and label != cat:
+                        new_entries.append({
+                            'search_text': f"{label} {cat}".lower(),
+                            'display': f"{label} ({cat})",
+                            'cat': cat,
+                            'is_main': False
+                        })
+                        
+                    # 3. Deep Search (Introspect Draw Method)
+                    if hasattr(panel, 'draw'):
+                        try:
+                            mock_layout = MockLayout()
+                            mock_panel = MockPanel(mock_layout, panel)
+                            # Run the draw method
+                            panel.draw(mock_panel, context)
+                            
+                            for text in mock_layout.found_strings:
+                                if not text or text == label: continue
+                                new_entries.append({
+                                    'search_text': f"{text} {label} {cat}".lower(),
+                                    'display': f"{text} ({label})",
+                                    'cat': cat,
+                                    'is_main': False
+                                })
+                        except Exception:
+                            # Silently fail if a specific panel's draw logic crashes in mock context
+                            pass
+
+            _SEARCH_CACHE["entries"] = new_entries
+            _SEARCH_CACHE["hash"] = current_hash
+            
+            global _SEARCH_CACHE_LAST_UPDATE
+            now = time.time()
+            if _SEARCH_CACHE_LAST_UPDATE == 0.0:
+                print(f"Sidebar Tab Search: Cache initialized with {len(new_entries)} entries.")
+            else:
+                elapsed = now - _SEARCH_CACHE_LAST_UPDATE
+                print(f"Sidebar Tab Search: Cache updated with {len(new_entries)} entries. Time since last update: {elapsed:.3f} seconds.")
+            _SEARCH_CACHE_LAST_UPDATE = now
+            
+        entries = _SEARCH_CACHE["entries"]
 
         # Alphabetical sorting
         entries.sort(key=lambda x: x['display'])
