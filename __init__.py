@@ -354,7 +354,7 @@ class SEARCHTABS_PT_popover(bpy.types.Panel):
 # Function to draw the icon in the header
 def draw_header_icon(self, context):
     layout = self.layout
-    layout.popover(panel="SEARCHTABS_PT_popover", text="", icon='VIEWZOOM')
+    layout.popover(panel="SEARCHTABS_PT_popover", text="N-Pannel Tabs", icon='VIEWZOOM')
 
 # Addon Preferences
 class SEARCHTABS_AddonPreferences(bpy.types.AddonPreferences):
@@ -389,15 +389,15 @@ def register():
     # Add to 3D view header
     # First try to remove to avoid duplicates when reloading in the same session
     try:
-        bpy.types.VIEW3D_HT_header.remove(draw_header_icon)
+        bpy.types.VIEW3D_HT_tool_header.remove(draw_header_icon)
     except ValueError:
         pass
-    bpy.types.VIEW3D_HT_header.append(draw_header_icon)
+    bpy.types.VIEW3D_HT_tool_header.append(draw_header_icon)
 
 def unregister():
     # Remove from header
     try:
-        bpy.types.VIEW3D_HT_header.remove(draw_header_icon)
+        bpy.types.VIEW3D_HT_tool_header.remove(draw_header_icon)
     except ValueError:
         pass
     
