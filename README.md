@@ -1,4 +1,4 @@
-fork of https://github.com/McKaa/sidebar-tab-search-blender-addon
+fork of https://github.com/Garvi/sidebar-tab-search-blender-addon
 edited using google antigravity for my personal use
 
 This add-on for Blender 4.2 (and newer) adds a quick search for Sidebar (N-Panel) tabs, conveniently located in the 3D Viewport header.

@@ -1,5 +1,5 @@
 # Sidebar Tab Search - Blender Add-on
-# Copyright (C) 2025 McKaa
+# Copyright (C) 2025 Garvi
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -16,7 +16,7 @@
 
 bl_info = {
     "name": "Sidebar Tab Search v2",
-    "author": "McKaa (Powered by Antigravity)",
+    "author": "Garvi",
     "version": (2, 0),
     "blender": (4, 2, 0),
     "location": "View3D > Header",
@@ -230,6 +230,7 @@ class SEARCHTABS_PT_popover(bpy.types.Panel):
 
         # Input field
         row = layout.row(align=True)
+        row.activate_init = True
         row.prop(props, "search_query", text="", icon='VIEWZOOM')
 
         query = props.search_query.lower()
@@ -318,9 +319,10 @@ class SEARCHTABS_PT_popover(bpy.types.Panel):
 
         # Display
         col = layout.column(align=True)
-        
+
         # Get limit from preferences
         limit = 25
+
         try:
             limit = context.preferences.addons[__name__].preferences.max_search_results
         except (KeyError, AttributeError):
@@ -336,7 +338,7 @@ class SEARCHTABS_PT_popover(bpy.types.Panel):
                         break
                     
                     icon = 'NODE' if entry['is_main'] else 'DOT'
-                    op = col.operator("searchtabs.switch_tab", text=entry['display'], icon=icon)
+                    op = col.operator("searchtabs.switch_tab", text=entry['display'], icon=icon, emboss=False)
                     op.category_name = entry['cat']
             
             if found_count == 0:
@@ -348,7 +350,7 @@ class SEARCHTABS_PT_popover(bpy.types.Panel):
             # Show only main categories when empty
             main_cats = sorted([e for e in entries if e['is_main']], key=lambda x: x['display'])
             for entry in main_cats:
-                op = col.operator("searchtabs.switch_tab", text=entry['display'], icon='NODE')
+                op = col.operator("searchtabs.switch_tab", text=entry['display'], icon='NODE', emboss=True, depress=True)
                 op.category_name = entry['cat']
 
 # Function to draw the icon in the header
