@@ -4,10 +4,10 @@
 # Required fields
 schema_version = "1.0.0"
 
-id = "sidebar_tab_search"
-version = "2.0.0"
-name = "Sidebar Tab Search"
-tagline = "Deep text search for Sidebar (N-Panel) tabs"
+id = "npanel_tab_search"
+version = "1.0.0"
+name = "N-Panel Tab Search"
+tagline = "Deep text search for N-Panel tabs"
 maintainer = "Garvi"
 
 # Supported types: "add-on", "theme"
@@ -28,7 +28,7 @@ copyright = [
 ]
 
 # Optional: link to documentation, support, source files, etc
-website = "https://github.com/Code-Garvi/sidebar-tab-search-blender-addon"
+website = "https://github.com/Code-Garvi/N-Panel-tab-search-blender-addon"
 
 # Optional: tag list defined by Blender and server
 # https://docs.blender.org/manual/en/dev/advanced/extensions/tags.html

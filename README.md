@@ -1,7 +1,7 @@
-fork of https://github.com/Garvi/sidebar-tab-search-blender-addon
+fork of https://github.com/Garvi/N-Panel-tab-search-blender-addon
 edited using google antigravity for my personal use
 
-This add-on for Blender 4.2 (and newer) adds a quick search for Sidebar (N-Panel) tabs, conveniently located in the 3D Viewport header.
+This add-on for Blender 4.2 (and newer) adds a quick search for N-Panel tabs, conveniently located in the 3D Viewport header.
 
 ## Features
 
@@ -10,7 +10,7 @@ This add-on for Blender 4.2 (and newer) adds a quick search for Sidebar (N-Panel
 - **Deep Search**: Introspects and searches through panel properties, labels, and buttons inside the tabs.
 - **Sub-categories**: Also searches for panel names inside tabs.
 - **Smart Switching**:
-  - Automatically opens the Sidebar if it is hidden.
+  - Automatically opens the N-Panel if it is hidden.
   - Scrolls the view to the top of the found tab/panel.
 
 ## Usage
@@ -25,7 +25,7 @@ This add-on for Blender 4.2 (and newer) adds a quick search for Sidebar (N-Panel
 You can customize the maximum number of search results in the add-on preferences:
 
 1. Go to **Edit > Preferences > Add-ons**.
-2. Search for **Sidebar Tab Search**.
+2. Search for **N-Panel Tab Search**.
 3. Expand usage and adjust the **Max Search Results** value (Default: 25, Max: 500).
 
 ## Compatibility

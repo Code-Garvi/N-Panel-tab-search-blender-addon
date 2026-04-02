@@ -1,4 +1,4 @@
-# Sidebar Tab Search - Blender Add-on
+# N-Panel Tab Search - Blender Add-on
 # Copyright (C) 2025 Garvi
 #
 # This program is free software: you can redistribute it and/or modify
@@ -15,15 +15,15 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 bl_info = {
-    "name": "Sidebar Tab Search v2",
+    "name": "N-Panel Tab Search v2",
     "author": "Garvi",
     "version": (2, 0),
     "blender": (4, 2, 0),
     "location": "View3D > Header",
-    "description": "Deep text search for Sidebar (N-Panel) tabs, panels, properties, and buttons.",
+    "description": "Deep text search for N-Panel tabs, panels, properties, and buttons.",
     "warning": "",
     "doc_url": "",
-    "tracker_url": "https://github.com/Code-Garvi/sidebar-tab-search-blender-addon",
+    "tracker_url": "https://github.com/Code-Garvi/N-Panel-tab-search-blender-addon",
     "support": "COMMUNITY",
     "category": "Interface",
 }
@@ -114,14 +114,14 @@ class MockPanel:
 class SEARCHTABS_PG_properties(bpy.types.PropertyGroup):
     search_query: bpy.props.StringProperty(
         name="Search Tab",
-        description="Type to search sidebar tabs",
+        description="Type to search N-Panel tabs",
         default="",
         options={'TEXTEDIT_UPDATE'}  # Update on every keystroke or after confirmation
     )
 
-# Operator to switch sidebar category
+# Operator to switch N-Panel category
 class SEARCHTABS_OT_switch_tab(bpy.types.Operator):
-    """Switch to selected sidebar tab"""
+    """Switch to selected N-Panel tab"""
     bl_idname = "searchtabs.switch_tab"
     bl_label = "Switch Tab"
     
@@ -129,13 +129,13 @@ class SEARCHTABS_OT_switch_tab(bpy.types.Operator):
     target_panel_label: bpy.props.StringProperty(default="")
 
     def execute(self, context):
-        # 1. Make sure the sidebar is visible
+        # 1. Make sure the N-Panel is visible
         if context.space_data and context.space_data.type == 'VIEW_3D':
-            # If the sidebar is hidden, show it
+            # If the N-Panel is hidden, show it
             if not context.space_data.show_region_ui:
                 context.space_data.show_region_ui = True
 
-        # 2. Try to find the 'UI' region (Sidebar) in the active area
+        # 2. Try to find the 'UI' region (N-Panel) in the active area
         sidebar_region = None
         for region in context.area.regions:
             if region.type == 'UI':
@@ -187,7 +187,7 @@ class SEARCHTABS_OT_switch_tab(bpy.types.Operator):
                     else:
                         raise e # Re-raise other unexpected errors
 
-                # Retry (often needed on first sidebar opening)
+                # Retry (often needed on first N-Panel opening)
                 if sidebar_region.active_panel_category != self.category_name:
                      try:
                         sidebar_region.active_panel_category = self.category_name
@@ -211,7 +211,7 @@ class SEARCHTABS_OT_switch_tab(bpy.types.Operator):
                 self.report({'WARNING'}, f"Warning: {e}")
                 return {'FINISHED'} # Return finished to not block the UI
         else:
-            self.report({'WARNING'}, "Sidebar not found.")
+            self.report({'WARNING'}, "sidebar not found.")
             return {'CANCELLED'}
 
 # Popover Panel (popup window)
@@ -306,10 +306,10 @@ class SEARCHTABS_PT_popover(bpy.types.Panel):
             global _SEARCH_CACHE_LAST_UPDATE
             now = time.time()
             if _SEARCH_CACHE_LAST_UPDATE == 0.0:
-                print(f"Sidebar Tab Search: Cache initialized with {len(new_entries)} entries.")
+                print(f"N-Panel Tab Search: Cache initialized with {len(new_entries)} entries.")
             else:
                 elapsed = now - _SEARCH_CACHE_LAST_UPDATE
-                print(f"Sidebar Tab Search: Cache updated with {len(new_entries)} entries. Time since last update: {elapsed:.3f} seconds.")
+                print(f"N-Panel Tab Search: Cache updated with {len(new_entries)} entries. Time since last update: {elapsed:.3f} seconds.")
             _SEARCH_CACHE_LAST_UPDATE = now
             
         entries = _SEARCH_CACHE["entries"]
@@ -350,13 +350,13 @@ class SEARCHTABS_PT_popover(bpy.types.Panel):
             # Show only main categories when empty
             main_cats = sorted([e for e in entries if e['is_main']], key=lambda x: x['display'])
             for entry in main_cats:
-                op = col.operator("searchtabs.switch_tab", text=entry['display'], icon='NODE', emboss=True, depress=True)
+                op = col.operator("searchtabs.switch_tab", text=entry['display'], icon='NODE', emboss=True)
                 op.category_name = entry['cat']
 
 # Function to draw the icon in the header
 def draw_header_icon(self, context):
     layout = self.layout
-    layout.popover(panel="SEARCHTABS_PT_popover", text="N-Pannel Tabs", icon='VIEWZOOM')
+    layout.popover(panel="SEARCHTABS_PT_popover", text="N-Panel Tabs", icon='VIEWZOOM')
 
 # Addon Preferences
 class SEARCHTABS_AddonPreferences(bpy.types.AddonPreferences):
