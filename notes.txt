@@ -1,0 +1,9 @@
+Currently when the N-Panel Tabs button is presses and the poppup appears, there is just list of all the available tabs.
+
+I want to be able to pin tabs on top to they always appear on top of the list
+
+There are going to be 2 sectioins now, pinned tabs and all Tabs
+All the entries in the tabs list will have a new pin/unpin toggle button next to them.
+Pressing the pin/unpin button creates a copy of the tab in the pinned section (and not remove it from all section)
+
+There are going to be no changes to the search functionality, just the initial popup when the search field is empty and user sees all the tabs listed

@@ -214,6 +214,30 @@ class SEARCHTABS_OT_switch_tab(bpy.types.Operator):
             self.report({'WARNING'}, "sidebar not found.")
             return {'CANCELLED'}
 
+class SEARCHTABS_OT_toggle_pin(bpy.types.Operator):
+    """Toggle Pin for N-Panel Tab"""
+    bl_idname = "searchtabs.toggle_pin"
+    bl_label = "Toggle Pin"
+    
+    category_name: bpy.props.StringProperty()
+
+    def execute(self, context):
+        prefs = context.preferences.addons[__name__].preferences
+        pinned = [p.strip() for p in prefs.pinned_tabs.split(',') if p.strip()]
+        
+        if self.category_name in pinned:
+            pinned.remove(self.category_name)
+        else:
+            pinned.append(self.category_name)
+            
+        prefs.pinned_tabs = ",".join(pinned)
+        
+        # Redraw the popover menu by forcing an area redraw
+        for area in context.screen.areas:
+            area.tag_redraw()
+            
+        return {'FINISHED'}
+
 # Popover Panel (popup window)
 class SEARCHTABS_PT_popover(bpy.types.Panel):
     """Creates a search popover panel"""
@@ -347,11 +371,41 @@ class SEARCHTABS_PT_popover(bpy.types.Panel):
             col.label(text="Type at least 2 characters...")
         else:
             col.label(text="Type to search...")
+            
+            try:
+                prefs = context.preferences.addons[__name__].preferences
+                pinned_list = [p.strip() for p in prefs.pinned_tabs.split(',') if p.strip()]
+            except (KeyError, AttributeError):
+                pinned_list = []
+
             # Show only main categories when empty
             main_cats = sorted([e for e in entries if e['is_main']], key=lambda x: x['display'])
+            
+            # Pinned Tabs Section
+            pinned_cats = [e for e in main_cats if e['cat'] in pinned_list]
+            if pinned_cats:
+                col.separator()
+                col.label(text="Pinned Tabs:")
+                for entry in pinned_cats:
+                    row = col.row(align=True)
+                    op = row.operator("searchtabs.switch_tab", text=entry['display'], icon='NODE', emboss=True)
+                    op.category_name = entry['cat']
+                    
+                    pin_op = row.operator("searchtabs.toggle_pin", text="", icon='PINNED', emboss=True)
+                    pin_op.category_name = entry['cat']
+                    
+            # All Tabs Section
+            col.separator()
+            col.label(text="All Tabs:")
             for entry in main_cats:
-                op = col.operator("searchtabs.switch_tab", text=entry['display'], icon='NODE', emboss=True)
+                row = col.row(align=True)
+                op = row.operator("searchtabs.switch_tab", text=entry['display'], icon='NODE', emboss=True)
                 op.category_name = entry['cat']
+                
+                is_pinned = entry['cat'] in pinned_list
+                pin_icon = 'PINNED' if is_pinned else 'UNPINNED'
+                pin_op = row.operator("searchtabs.toggle_pin", text="", icon=pin_icon, emboss=True)
+                pin_op.category_name = entry['cat']
 
 # Function to draw the icon in the header
 def draw_header_icon(self, context):
@@ -370,6 +424,12 @@ class SEARCHTABS_AddonPreferences(bpy.types.AddonPreferences):
         max=500
     )
 
+    pinned_tabs: bpy.props.StringProperty(
+        name="Pinned Tabs",
+        description="Comma-separated list of pinned tab categories",
+        default=""
+    )
+
     def draw(self, context):
         layout = self.layout
         layout.prop(self, "max_search_results")
@@ -378,6 +438,7 @@ class SEARCHTABS_AddonPreferences(bpy.types.AddonPreferences):
 classes = (
     SEARCHTABS_PG_properties,
     SEARCHTABS_OT_switch_tab,
+    SEARCHTABS_OT_toggle_pin,
     SEARCHTABS_PT_popover,
     SEARCHTABS_AddonPreferences,
 )
